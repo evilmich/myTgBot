@@ -10,6 +10,7 @@ import (
 )
 
 const (
+	AllCmd   = "/all"
 	RndCmd   = "/rnd"
 	HelpCmd  = "/help"
 	StartCmd = "/start"
@@ -25,6 +26,8 @@ func (p *ProcessorOver) doCmd(text string, chatID int, username string) error {
 	}
 
 	switch text {
+	case AllCmd:
+		return p.sendAll(chatID, username)
 	case RndCmd:
 		return p.sendRandom(chatID, username)
 	case HelpCmd:
@@ -59,6 +62,28 @@ func (p *ProcessorOver) savePage(chatID int, pageUrl string, username string) (e
 	if err := p.tg.SendMessage(chatID, msgSaved); err != nil {
 		return err
 	}
+	return nil
+}
+
+func (p *ProcessorOver) sendAll(chatID int, username string) (err error) {
+	defer func() { err = er.WrapIfErr("can't do command: can't send all URLs", err) }()
+
+	pages, err := p.storage.PickAll(username)
+
+	if err != nil && !errors.Is(err, storage.ErrNoSavedPages) {
+		return err
+	}
+
+	if errors.Is(err, storage.ErrNoSavedPages) {
+		return p.tg.SendMessage(chatID, msgNoSavedPages)
+	}
+
+	for _, page := range pages {
+		if err := p.tg.SendMessage(chatID, page.URL); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

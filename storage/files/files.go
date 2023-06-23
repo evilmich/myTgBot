@@ -16,11 +16,6 @@ type Storage struct {
 	basePath string
 }
 
-//func (s Storage) IsExists(p *storage.Page) (bool, error) {
-//	//TODO implement me
-//	panic("implement me")
-//}
-
 const defaultPerm = 0774
 
 func New(basePath string) Storage {
@@ -55,6 +50,31 @@ func (s Storage) Save(page *storage.Page) (err error) {
 	}
 
 	return nil
+}
+
+func (s Storage) PickAll(userName string) (pages []*storage.Page, err error) {
+	defer func() { err = er.WrapIfErr("can't pick all URLs", err) }()
+
+	path := filepath.Join(s.basePath, userName)
+
+	files, err := os.ReadDir(path)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(files) == 0 {
+		return nil, storage.ErrNoSavedPages
+	}
+
+	mas := make([]*storage.Page, 0)
+
+	for _, file := range files {
+		var a, _ = s.decodePage(filepath.Join(path, file.Name()))
+		mas = append(mas, a)
+	}
+
+	return mas, nil
 }
 
 func (s Storage) PickRandom(userName string) (page *storage.Page, err error) {
