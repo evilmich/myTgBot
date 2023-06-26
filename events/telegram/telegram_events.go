@@ -1,6 +1,7 @@
 package telegram
 
 import (
+	"context"
 	"errors"
 	"my_tg_bot/clients/telegram"
 	"my_tg_bot/events"
@@ -31,9 +32,8 @@ func New(client *telegram.Client, storage storage.Storage) *ProcessorOver {
 	}
 }
 
-func (p *ProcessorOver) Fetch(limit int) ([]events.Event, error) {
-	updates, err := p.tg.Updates(p.offset, limit)
-
+func (p *ProcessorOver) Fetch(ctx context.Context, limit int) ([]events.Event, error) {
+	updates, err := p.tg.Updates(ctx, p.offset, limit)
 	if err != nil {
 		return nil, er.Wrap("can't get events", err)
 	}
@@ -53,22 +53,22 @@ func (p *ProcessorOver) Fetch(limit int) ([]events.Event, error) {
 	return res, nil
 }
 
-func (p *ProcessorOver) Process(event events.Event) error {
+func (p *ProcessorOver) Process(ctx context.Context, event events.Event) error {
 	switch event.Type {
 	case events.Message:
-		return p.processMessage(event)
+		return p.processMessage(ctx, event)
 	default:
-		return er.Wrap("can't process", ErrUnknownEventType)
+		return er.Wrap("can't process message", ErrUnknownEventType)
 	}
 }
 
-func (p *ProcessorOver) processMessage(event events.Event) error {
+func (p *ProcessorOver) processMessage(ctx context.Context, event events.Event) error {
 	meta, err := meta(event)
 	if err != nil {
 		return er.Wrap("can't process message", err)
 	}
 
-	if err := p.doCmd(event.Text, meta.ChatID, meta.Username); err != nil {
+	if err := p.doCmd(ctx, event.Text, meta.ChatID, meta.Username); err != nil {
 		return er.Wrap("can't process message", err)
 	}
 
@@ -86,6 +86,7 @@ func meta(event events.Event) (Meta, error) {
 
 func event(upd telegram.Update) events.Event {
 	updType := fetchType(upd)
+
 	res := events.Event{
 		Type: updType,
 		Text: fetchText(upd),

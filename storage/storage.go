@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"crypto/sha256"
 	"errors"
 	"fmt"
@@ -9,14 +10,14 @@ import (
 )
 
 type Storage interface {
-	Save(p *Page) error
-	PickAll(UserName string) ([]*Page, error)
-	PickRandom(UserName string) (*Page, error)
-	Remove(p *Page) error
-	IsExists(p *Page) (bool, error)
+	Save(ctx context.Context, p *Page) error
+	//PickAll(ctx context.Context, UserName string) ([]*Page, error)
+	PickRandom(ctx context.Context, UserName string) (*Page, error)
+	Remove(ctx context.Context, p *Page) error
+	IsExists(ctx context.Context, p *Page) (bool, error)
 }
 
-var ErrNoSavedPages = errors.New("no saves pages")
+var ErrNoSavedPages = errors.New("no saved pages")
 
 type Page struct {
 	URL      string
@@ -27,11 +28,11 @@ func (p Page) Hash() (string, error) {
 	h := sha256.New()
 
 	if _, err := io.WriteString(h, p.URL); err != nil {
-		return "", er.Wrap("can't calculate hash(URL)", err)
+		return "", er.Wrap("can't calculate hash", err)
 	}
 
 	if _, err := io.WriteString(h, p.UserName); err != nil {
-		return "", er.Wrap("can't calculate hash(UserName)", err)
+		return "", er.Wrap("can't calculate hash", err)
 	}
 
 	return fmt.Sprintf("%x", h.Sum(nil)), nil
