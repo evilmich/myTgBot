@@ -40,7 +40,7 @@ func New(connectString string, connectTimeout time.Duration) Storage {
 	}
 
 	pages := Pages{
-		Collection: client.Database("read-adviser").Collection("pages"),
+		Collection: client.Database("my_tg_bot").Collection("links"),
 	}
 
 	return Storage{
