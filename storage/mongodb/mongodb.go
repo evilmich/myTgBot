@@ -65,10 +65,10 @@ func (s Storage) PickAll(ctx context.Context, UserName string) (pages []*storage
 
 	filter := UserNameFilter(UserName)
 
-	options := options.Find()
-	options.SetSort(bson.M{"created": -1})
+	pickOptions := options.Find()
+	pickOptions.SetSort(bson.M{"created": -1})
 
-	cursor, err := s.pages.Find(ctx, filter, options)
+	cursor, err := s.pages.Find(ctx, filter, pickOptions)
 	if err != nil {
 		return nil, err
 	}
