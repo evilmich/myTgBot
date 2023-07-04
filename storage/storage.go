@@ -11,7 +11,7 @@ import (
 
 type Storage interface {
 	Save(ctx context.Context, p *Page) error
-	//PickAll(ctx context.Context, UserName string) ([]*Page, error)
+	PickAll(ctx context.Context, UserName string) ([]*Page, error)
 	PickRandom(ctx context.Context, UserName string) (*Page, error)
 	Remove(ctx context.Context, p *Page) error
 	IsExists(ctx context.Context, p *Page) (bool, error)

@@ -60,70 +60,45 @@ func (s Storage) Save(ctx context.Context, page *storage.Page) error {
 	return nil
 }
 
-//func (s Storage) PickAll(ctx context.Context, userName string) (pages []*storage.Page, err error) {
-//	defer func() { err = er.WrapIfErr("can't pick all URLs", err) }()
-//
-//	path := filepath.Join(s.basePath, userName)
-//
-//	files, err := os.ReadDir(path)
-//
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	if len(files) == 0 {
-//		return nil, storage.ErrNoSavedPages
-//	}
-//
-//	mas := make([]*storage.Page, 0)
-//
-//	for _, file := range files {
-//		var a, _ = s.decodePage(filepath.Join(path, file.Name()))
-//		mas = append(mas, a)
-//	}
-//
-//	return mas, nil
-//
-//}
+func (s Storage) PickAll(ctx context.Context, UserName string) (pages []*storage.Page, err error) {
+	defer func() { err = er.WrapIfErr("can't pick all URLs", err) }()
 
-//func (s Storage) PickAll(ctx context.Context, userName string) (pages []*storage.Page, err error) {
-//	defer func() { err = er.WrapIfErr("can't pick all URLs", err) }()
-//
-//	pipe := bson.A{
-//		bson.M{"$sample": bson.M{"size": 1}},
-//	}
-//
-//	cursor, err := s.pages.Aggregate(ctx, pipe)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	var p Page
-//
-//	cursor.Next(ctx)
-//
-//	err = cursor.Decode(&p)
-//	switch {
-//	case errors.Is(err, io.EOF):
-//		return nil, storage.ErrNoSavedPages
-//	case err != nil:
-//		return nil, err
-//	}
-//
-//	return &storage.Page{
-//		URL:      p.URL,
-//		UserName: p.UserName,
-//	}, nil
-//}
+	filter := UserNameFilter(UserName)
+
+	options := options.Find()
+	options.SetSort(bson.M{"created": -1})
+
+	cursor, err := s.pages.Find(ctx, filter, options)
+	if err != nil {
+		return nil, err
+	}
+
+	var mas []*storage.Page
+
+	for cursor.Next(ctx) {
+		p := &storage.Page{}
+		err := cursor.Decode(&p)
+
+		if err != nil {
+			return nil, err
+		} else {
+			mas = append(mas, p)
+		}
+	}
+
+	if mas == nil {
+		return nil, storage.ErrNoSavedPages
+	}
+
+	return mas, nil
+}
 
 func (s Storage) PickRandom(ctx context.Context, UserName string) (page *storage.Page, err error) {
 	defer func() { err = er.WrapIfErr("can't pick random page", err) }()
 
-	pipe := bson.A{
-		bson.M{"$sample": bson.M{"size": 1}},
-	}
+	filter := UserNameFilter(UserName)
 
-	log.Printf("pipe: %s\n", pipe)
+	pipe := bson.A{bson.M{"$match": filter}, bson.M{"$sample": bson.M{"size": 1}}}
 
 	cursor, err := s.pages.Aggregate(ctx, pipe)
 
@@ -131,17 +106,11 @@ func (s Storage) PickRandom(ctx context.Context, UserName string) (page *storage
 		return nil, err
 	}
 
-	log.Printf("cursor: %s\n", cursor)
-
 	var p Page
 
 	cursor.Next(ctx)
 
 	err = cursor.Decode(&p)
-
-	log.Printf("page: %s\n", p)
-
-	log.Printf("err: %s\n", err)
 
 	switch {
 	case errors.Is(err, io.EOF):
@@ -150,14 +119,10 @@ func (s Storage) PickRandom(ctx context.Context, UserName string) (page *storage
 		return nil, err
 	}
 
-	mas := &storage.Page{
+	return &storage.Page{
 		URL:      p.URL,
 		UserName: p.UserName,
-	}
-
-	log.Printf("storage page: %s\n", mas)
-
-	return mas, nil
+	}, nil
 }
 
 func (s Storage) Remove(ctx context.Context, storagePage *storage.Page) error {
@@ -190,4 +155,13 @@ func (p Page) Filter() bson.M {
 		"url":      p.URL,
 		"username": p.UserName,
 	}
+}
+
+func UserNameFilter(UserName string) bson.M {
+	var filters = []bson.M{
+		{
+			"username": UserName,
+		},
+	}
+	return bson.M{"$and": filters}
 }

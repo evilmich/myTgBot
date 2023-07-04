@@ -27,8 +27,8 @@ func (p *ProcessorOver) doCmd(ctx context.Context, text string, chatID int, user
 	}
 
 	switch text {
-	//case AllCmd:
-	//	return p.sendAll(ctx, chatID, username)
+	case AllCmd:
+		return p.sendAll(ctx, chatID, username)
 	case RndCmd:
 		return p.sendRandom(ctx, chatID, username)
 	case HelpCmd:
@@ -67,29 +67,27 @@ func (p *ProcessorOver) savePage(ctx context.Context, chatID int, pageURL string
 	return nil
 }
 
-//func (p *ProcessorOver) sendAll(ctx context.Context, chatID int, username string) (err error) {
-//	defer func() { err = er.WrapIfErr("can't do command: can't send all URLs", err) }()
-//
-//	pages, err := p.storage.PickAll(ctx, username)
-//
-//	log.Printf("pages: %s", pages)
-//
-//	if err != nil && !errors.Is(err, storage.ErrNoSavedPages) {
-//		return err
-//	}
-//
-//	if errors.Is(err, storage.ErrNoSavedPages) {
-//		return p.tg.SendMessage(ctx, chatID, msgNoSavedPages)
-//	}
-//
-//	for _, page := range pages {
-//		if err := p.tg.SendMessage(ctx, chatID, page.URL); err != nil {
-//			return err
-//		}
-//	}
-//
-//	return nil
-//}
+func (p *ProcessorOver) sendAll(ctx context.Context, chatID int, username string) (err error) {
+	defer func() { err = er.WrapIfErr("can't do command: can't send all URLs", err) }()
+
+	pages, err := p.storage.PickAll(ctx, username)
+
+	if err != nil && !errors.Is(err, storage.ErrNoSavedPages) {
+		return err
+	}
+
+	if errors.Is(err, storage.ErrNoSavedPages) {
+		return p.tg.SendMessage(ctx, chatID, msgNoSavedPages)
+	}
+
+	for _, page := range pages {
+		if err := p.tg.SendMessage(ctx, chatID, page.URL); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
 
 func (p *ProcessorOver) sendRandom(ctx context.Context, chatID int, username string) (err error) {
 	defer func() { err = er.WrapIfErr("can't do command: can't send random", err) }()
