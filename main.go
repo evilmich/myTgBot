@@ -11,9 +11,9 @@ import (
 )
 
 const (
-	tgBotHost   = "api.telegram.org"
-	storagePath = "files_storage"
-	batchSize   = 100
+	tgBotHost = "api.telegram.org"
+	//storagePath = "files_storage"
+	batchSize = 100
 )
 
 func main() {
