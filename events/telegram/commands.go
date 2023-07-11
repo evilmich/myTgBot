@@ -7,14 +7,16 @@ import (
 	"my_tg_bot/libs/er"
 	"my_tg_bot/storage"
 	"net/url"
+	"strconv"
 	"strings"
 )
 
 const (
-	AllCmd   = "/all"
-	RndCmd   = "/rnd"
-	HelpCmd  = "/help"
-	StartCmd = "/start"
+	AllCmd       = "/all"
+	RndCmd       = "/rnd"
+	HelpCmd      = "/help"
+	StartCmd     = "/start"
+	NumberUrlMsg = "❇️Количество сохранённых ссылок:  "
 )
 
 func (p *ProcessorOver) doCmd(ctx context.Context, text string, chatID int, username string) error {
@@ -80,10 +82,24 @@ func (p *ProcessorOver) sendAll(ctx context.Context, chatID int, username string
 		return p.tg.SendMessage(ctx, chatID, msgNoSavedPages)
 	}
 
-	for _, page := range pages {
-		if err := p.tg.SendMessage(ctx, chatID, page.URL); err != nil {
-			return err
-		}
+	//for _, page := range pages {
+	//	if err := p.tg.SendMessage(ctx, chatID, page.URL); err != nil {
+	//		return err
+	//	}
+	//}
+
+	var pageUrls string
+	var urlSum = 0
+	for i, page := range pages {
+		pageUrls += strconv.Itoa(i+1) + "⬇️\n" + page.URL + "\n\n"
+		urlSum = i + 1
+	}
+
+	var pageUrlsMsg string
+	pageUrlsMsg = NumberUrlMsg + strconv.Itoa(urlSum) + "\n\n" + pageUrls
+
+	if err := p.tg.SendMessage(ctx, chatID, pageUrlsMsg); err != nil {
+		return err
 	}
 
 	return nil
